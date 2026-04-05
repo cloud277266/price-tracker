@@ -1,0 +1,36 @@
+### 상품 등록 테스트
+POST http://localhost:8080/api/products
+Content-Type: application/json
+
+{
+  "productName": "삼성 갤럭시 버즈",
+  "productUrl": "https://shopping.naver.com",
+  "targetPrice": 50000
+}
+
+###
+
+### 상품 전체 조회 테스트
+GET http://localhost:8080/api/products
+
+###
+
+### 네이버 쇼핑 가격 조회 API 테스트
+GET http://localhost:8080/api/products/price-test?productName=더단백드링크초코
+
+###
+
+### 네이버 쇼핑 API 직접 호출 테스트
+GET https://openapi.naver.com/v1/search/shop.json?query=LG그램노트북&display=5
+X-Naver-Client-Id: ZwiauPUKkh8etfA49L_d
+X-Naver-Client-Secret: f_zGxeicuA
+
+###
+
+### 노트북 상품 검색 (우리 서버)
+GET http://localhost:8080/api/products/search?keyword=LG그램노트북&display=5
+
+###
+
+### 태블릿 상품 검색 (우리 서버)
+GET http://localhost:8080/api/products/search?keyword=삼성갤럭시탭&display=5
