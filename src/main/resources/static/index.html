@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>가격 추적기 홈</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        ::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans max-w-md mx-auto h-screen flex flex-col relative shadow-xl overflow-hidden">
+
+<header class="bg-blue-600 text-white p-4 shrink-0 shadow-sm z-10">
+    <h1 class="text-xl font-bold text-center">Price Tracker</h1>
+</header>
+
+<main class="flex-1 overflow-y-auto bg-white pb-20">
+    <div id="categoryTabs" class="flex overflow-x-auto whitespace-nowrap border-b border-gray-200 sticky top-0 bg-white z-10 hide-scrollbar">
+    </div>
+
+    <div class="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-100">
+        <span class="text-sm text-gray-500 font-medium" id="searchKeywordInfo">노트북 검색 결과</span>
+        <select id="sortSelect" onchange="changeSort()" class="text-sm border-gray-300 rounded-md p-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+            <option value="asc">저가순 (저점기준)</option>
+            <option value="sim">인기순 (정확도)</option>
+        </select>
+    </div>
+
+    <div id="productList" class="divide-y divide-gray-100"></div>
+
+    <div class="flex justify-center items-center space-x-4 p-6 bg-white">
+        <button onclick="prevPage()" id="prevBtn" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg disabled:opacity-50 font-semibold" disabled>이전</button>
+        <span id="pageIndicator" class="font-bold text-blue-600">1</span>
+        <button onclick="nextPage()" id="nextBtn" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg font-semibold">다음</button>
+    </div>
+</main>
+
+<nav class="bg-white border-t border-gray-200 flex justify-around items-center h-16 shrink-0 absolute bottom-0 w-full max-w-md z-20">
+    <button class="flex flex-col items-center justify-center w-full h-full text-blue-600">
+        <span class="text-xl mb-1">🏠</span><span class="text-xs font-bold">홈</span>
+    </button>
+    <button class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-600 transition">
+        <span class="text-xl mb-1">🏆</span><span class="text-xs font-bold">랭킹</span>
+    </button>
+    <button class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-600 transition">
+        <span class="text-xl mb-1">👤</span><span class="text-xs font-bold">회원정보</span>
+    </button>
+</nav>
+
+<script>
+    const categories = ["노트북", "태블릿", "모니터", "세탁기", "건조기", "냉장고"];
+    let currentCategory = '노트북';
+    let currentSort = 'asc';
+    let currentPage = 1;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderCategories();
+        fetchProducts();
+    });
+
+    function renderCategories() {
+        const tabsDiv = document.getElementById('categoryTabs');
+        tabsDiv.innerHTML = categories.map(cat => `
+                <button onclick="changeCategory('${cat}')" id="tab-${cat}"
+                    class="px-5 py-3 text-center font-semibold transition ${cat === currentCategory ? 'font-bold border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 border-b-2 border-transparent'}">
+                    ${cat}
+                </button>
+            `).join('');
+    }
+
+    function changeCategory(category) {
+        currentCategory = category;
+        currentPage = 1;
+        renderCategories();
+        document.getElementById('searchKeywordInfo').innerText = `${category} 검색 결과`;
+        fetchProducts();
+    }
+
+    function changeSort() {
+        currentSort = document.getElementById('sortSelect').value;
+        currentPage = 1;
+        fetchProducts();
+    }
+
+    function prevPage() {
+        if (currentPage > 1) { currentPage--; fetchProducts(); }
+    }
+
+    function nextPage() {
+        currentPage++; fetchProducts();
+    }
+
+    async function fetchProducts() {
+        const listDiv = document.getElementById('productList');
+        listDiv.innerHTML = '<div class="p-8 text-center text-gray-400">데이터를 불러오는 중입니다...</div>';
+
+        document.getElementById('pageIndicator').innerText = currentPage;
+        document.getElementById('prevBtn').disabled = (currentPage === 1);
+
+        try {
+            const response = await fetch(`/api/products/search?keyword=${encodeURIComponent(currentCategory)}&display=10&page=${currentPage}&sort=${currentSort}`);
+            if (!response.ok) throw new Error('API 오류');
+
+            const data = await response.json();
+            let items = typeof data === 'string' ? JSON.parse(data).items : data.items;
+
+            listDiv.innerHTML = '';
+            if (!items || items.length === 0) {
+                listDiv.innerHTML = '<div class="p-8 text-center text-gray-500">검색 결과가 없습니다.</div>';
+                return;
+            }
+
+            items.forEach(item => {
+                const cleanTitle = item.title.replace(/<[^>]*>?/gm, '').replace(/'/g, "\\'");
+                const priceNum = parseInt(item.lprice);
+                const priceStr = priceNum.toLocaleString();
+
+                // 백엔드에서 넘겨준 할인 정보 파싱 (없으면 0 처리)
+                const discountRate = item.discountRate || 0;
+                const discountAmount = item.discountAmount || 0;
+
+                // 할인 배지 HTML 조립
+                let discountHtml = '';
+                if (discountRate > 0) {
+                    discountHtml = `
+                            <div class="bg-[#9e1f37] text-white text-xs font-bold px-2 py-1 rounded mb-1 text-center shadow-sm w-full">
+                                -${discountRate}% <br/>
+                                <span class="text-[10px] font-normal text-red-100">(⬇ ${discountAmount.toLocaleString()}원)</span>
+                            </div>
+                        `;
+                }
+
+                const html = `
+                        <div class="flex p-4 bg-white hover:bg-gray-50 transition">
+                            <img src="${item.image}" alt="상품이미지" class="w-20 h-20 object-cover rounded-lg border border-gray-100 shrink-0">
+                            <div class="ml-4 flex-1 overflow-hidden flex flex-col justify-between">
+                                <div>
+                                    <h3 class="text-sm font-bold text-gray-800 truncate mb-1">${cleanTitle}</h3>
+                                    <p class="text-xs text-gray-400">${item.mallName}</p>
+                                </div>
+                                <div class="flex justify-between items-end mt-2">
+                                    <span class="text-lg font-extrabold text-blue-600">${priceStr}<span class="text-sm text-gray-600 font-normal">원</span></span>
+
+                                    <div class="flex flex-col items-end">
+                                        ${discountHtml}
+                                        <button onclick="trackProduct('${cleanTitle}', ${priceNum})" class="px-3 py-1 bg-gray-800 text-white text-xs font-bold rounded-md hover:bg-gray-700 w-full flex justify-center items-center gap-1">
+                                            추적
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                listDiv.insertAdjacentHTML('beforeend', html);
+            });
+        } catch (error) {
+            console.error(error);
+            listDiv.innerHTML = '<div class="p-8 text-center text-red-500">서버와 연결할 수 없습니다.</div>';
+        }
+    }
+
+    async function trackProduct(name, price) {
+        if (!confirm(`[${name}]\n이 상품을 현재 최저가(${price.toLocaleString()}원)를 목표가로 설정하여 추적하시겠습니까?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productName: name,
+                    targetPrice: price,
+                    alarmEnabled: true
+                })
+            });
+
+            if (response.ok) {
+                alert('성공적으로 추적 목록에 추가되었습니다! (서버 백그라운드에서 감시를 시작합니다)');
+            } else {
+                alert('등록에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('서버와 통신 중 오류가 발생했습니다.');
+        }
+    }
+</script>
+</body>
+</html>
