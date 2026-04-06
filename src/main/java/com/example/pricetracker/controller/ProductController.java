@@ -39,11 +39,19 @@ public class ProductController {
     }
     // 카테고리별 상품 검색
     @GetMapping("/search")
-    public ResponseEntity<?> searchProducts(
+    public ResponseEntity<String> searchProducts(
             @RequestParam String keyword,
-            @RequestParam(defaultValue = "10") int display) {
-        return ResponseEntity.ok(
-                naverShoppingService.searchProducts(keyword, display)
-        );
+            @RequestParam(defaultValue = "10") int display,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "asc") String sort) {
+
+        // 네이버 API 페이징 공식: 1페이지는 1, 2페이지는 11, 3페이지는 21
+        int start = (page - 1) * display + 1;
+
+        // 서비스 호출 시 계산된 start와 sort를 넘겨줍니다
+        String result = naverShoppingService.searchProducts(keyword, display, start, sort);
+        return ResponseEntity.ok(result);
     }
+
+
 }

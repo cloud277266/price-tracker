@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Slf4j
 @Service
@@ -19,9 +20,19 @@ public class NaverShoppingService {
     @Value("${naver.client.secret}")
     private String clientSecret;
 
-    public String searchProducts(String keyword, int display) {
+
+
+    public String searchProducts(String keyword, int display, int start, String sort) {
         RestTemplate restTemplate = new RestTemplate();
-        String url = "https://openapi.naver.com/v1/search/shop.json?query=" + keyword + "&display=" + display;
+
+        // URL을 안전하게 만들어주는 UriComponentsBuilder 사용
+        String url = UriComponentsBuilder.fromHttpUrl("https://openapi.naver.com/v1/search/shop.json")
+                .queryParam("query", keyword)
+                .queryParam("display", display)
+                .queryParam("start", start)
+                .queryParam("sort", sort)
+                .encode()
+                .toUriString();
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-Naver-Client-Id", clientId);
@@ -36,7 +47,8 @@ public class NaverShoppingService {
 
     public int getLowestPrice(String productName) {
         try {
-            String jsonResponse = searchProducts(productName, 1);
+            // 스케줄러가 최저가를 찾을 때는 1페이지(start=1), 저가순(sort="asc")으로 검색해야 가장 정확합니다.
+            String jsonResponse = searchProducts(productName, 1, 1, "asc");
 
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode root = objectMapper.readTree(jsonResponse);
@@ -49,7 +61,6 @@ public class NaverShoppingService {
         } catch (Exception e) {
             log.error("네이버 가격 파싱 중 에러 발생: {}", e.getMessage());
         }
-
         return 0;
     }
 }
