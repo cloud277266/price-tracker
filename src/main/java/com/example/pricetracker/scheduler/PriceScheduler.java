@@ -25,7 +25,7 @@ public class PriceScheduler {
     private final NaverShoppingService naverShoppingService;
     private final TelegramService telegramService; // 추가
 
-    @Scheduled(fixedDelay = 60000)
+    @Scheduled(fixedDelay = 60000000)
     @Transactional
     public void updatePrices() {
         log.info("=== 정기 가격 업데이트 스케줄러 실행 ===");

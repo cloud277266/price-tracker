@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/products")
@@ -20,8 +21,7 @@ public class ProductController {
 
     @PostMapping
     public ResponseEntity<Product> addProduct(@RequestBody ProductRequestDto dto) {
-        Product saved = productService.addProduct(dto);
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(productService.addProduct(dto));
     }
 
     @GetMapping
@@ -41,9 +41,13 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int display,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "asc") String sort) {
+        return ResponseEntity.ok(naverShoppingService.searchProducts(keyword, display, page, sort));
+    }
 
-        // 변경점: start 파라미터 계산을 서비스 단으로 넘기고, page 번호를 그대로 전달합니다.
-        String result = naverShoppingService.searchProducts(keyword, display, page, sort);
-        return ResponseEntity.ok(result);
+    // 🔥 프론트엔드 차트용 데이터 제공 API
+    @GetMapping("/history")
+    public ResponseEntity<List<Map<String, Object>>> getProductHistory(@RequestParam String productName) {
+        List<Map<String, Object>> historyData = productService.getPriceHistoryFormatted(productName);
+        return ResponseEntity.ok(historyData);
     }
 }

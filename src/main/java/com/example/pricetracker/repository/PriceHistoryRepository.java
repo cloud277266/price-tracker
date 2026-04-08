@@ -8,8 +8,8 @@ import java.util.List;
 
 public interface PriceHistoryRepository extends JpaRepository<PriceHistory, Long> {
 
-    // 에러의 원인이었던 CheckedAt을 CreatedAt으로 수정했습니다.
-    // (이 메서드는 나중에 화면에 가격 변동 그래프를 그릴 때 최신순으로 데이터를 가져오기 위해 쓰입니다.)
     List<PriceHistory> findByProductOrderByCreatedAtDesc(Product product);
 
+    // 🔥 차트 렌더링을 위해 과거부터 최신순으로 정렬해서 가져오는 기능 추가
+    List<PriceHistory> findByProductOrderByCreatedAtAsc(Product product);
 }
