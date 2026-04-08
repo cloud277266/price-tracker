@@ -231,7 +231,8 @@
 
     // 🔥 URL을 통해 상세페이지로 파라미터 전달
     function goToDetail(name, price, img, mall, rate, amt, link) {
-        const url = `/detail.html?name=${encodeURIComponent(name)}&price=${price}&img=${img}&mall=${mall}&rate=${rate}&amt=${amt}&cat=${encodeURIComponent(currentKeyword)}`;
+        // url 끝부분에 &link=${link} 가 추가되었습니다!
+        const url = `/detail.html?name=${encodeURIComponent(name)}&price=${price}&img=${img}&mall=${mall}&rate=${rate}&amt=${amt}&link=${link}&cat=${encodeURIComponent(currentKeyword)}`;
         window.location.href = url;
     }
 

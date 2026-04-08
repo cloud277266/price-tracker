@@ -17,6 +17,7 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private String chatId;
 
     private String productName;   // 상품명
     private String category;      // 카테고리 (노트북/태블릿)

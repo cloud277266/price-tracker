@@ -22,9 +22,9 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final PriceHistoryRepository priceHistoryRepository;
 
-    // 상품 등록 (이미 있으면 목표가만 업데이트)
     public Product addProduct(ProductRequestDto dto) {
-        Optional<Product> existing = productRepository.findByProductName(dto.getProductName());
+        // 🔥 이름뿐만 아니라 내 아이디(chatId)까지 일치해야 내 기존 상품으로 인정
+        Optional<Product> existing = productRepository.findByProductNameAndChatId(dto.getProductName(), dto.getChatId());
         if (existing.isPresent()) {
             Product product = existing.get();
             product.setTargetPrice(dto.getTargetPrice());
@@ -33,6 +33,7 @@ public class ProductService {
         }
 
         Product product = new Product();
+        product.setChatId(dto.getChatId()); // 🔥 DB에 주인 명찰 기록!
         product.setProductName(dto.getProductName());
         product.setProductUrl(dto.getProductUrl() != null ? dto.getProductUrl() : "");
         product.setTargetPrice(dto.getTargetPrice());
@@ -41,7 +42,6 @@ public class ProductService {
 
         Product savedProduct = productRepository.save(product);
 
-        // 🔥 최초 등록 시 현재가를 기준으로 이력을 하나 남김
         priceHistoryRepository.save(new PriceHistory(savedProduct, dto.getTargetPrice()));
         return savedProduct;
     }
@@ -50,16 +50,16 @@ public class ProductService {
         return productRepository.findAll();
     }
 
-    // 🔥 차트용 데이터 포맷팅 로직
     public List<Map<String, Object>> getPriceHistoryFormatted(String productName) {
-        Optional<Product> productOpt = productRepository.findByProductName(productName);
+        // 🔥 주의: 차트 표시는 임시로 첫 번째 상품 기준으로 띄웁니다 (추후 고도화 필요)
+        Optional<Product> productOpt = productRepository.findByProductNameAndChatId(productName, "임시").or(() -> productRepository.findAll().stream().filter(p -> p.getProductName().equals(productName)).findFirst());
+
         if (productOpt.isEmpty()) {
-            return List.of(); // 아직 등록 안된 상품이면 빈 리스트 반환
+            return List.of();
         }
 
         List<PriceHistory> histories = priceHistoryRepository.findByProductOrderByCreatedAtAsc(productOpt.get());
 
-        // 날짜를 "04.08 14:00" 형식으로 변환
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM.dd HH:mm");
 
         return histories.stream().map(h -> {
