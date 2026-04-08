@@ -15,27 +15,27 @@ public class TelegramService {
     @Value("${telegram.bot.token}")
     private String token;
 
-    @Value("${telegram.chat.id}")
-    private String chatId;
+    // 🔥 공통 chatId 변수는 완전히 삭제했습니다.
 
-    public void sendMessage(String message) {
+    // 🔥 알림을 받을 사람의 targetChatId를 파라미터로 직접 받아서 보냅니다.
+    public void sendMessage(String targetChatId, String message) {
+        if (targetChatId == null || targetChatId.trim().isEmpty()) {
+            log.warn("수신자(chatId) 정보가 없어서 알림을 보낼 수 없습니다.");
+            return;
+        }
+
         try {
             RestTemplate restTemplate = new RestTemplate();
-
-            // 텔레그램 API URL (메시지 내용을 URL 뒤에 붙이지 않습니다)
             String url = "https://api.telegram.org/bot" + token + "/sendMessage";
 
-            // 메시지를 안전한 보따리(Map)에 담습니다.
             Map<String, String> requestBody = new HashMap<>();
-            requestBody.put("chat_id", chatId);
+            requestBody.put("chat_id", targetChatId); // 🔥 수신자 개별 지정
             requestBody.put("text", message);
 
-            // POST 방식으로 보따리를 통째로 전송합니다.
             restTemplate.postForObject(url, requestBody, String.class);
-
-            log.info("텔레그램 알림 전송 완료 (한글 깨짐 해결!)");
+            log.info("텔레그램 맞춤 알림 전송 완료 - 수신자: {}", targetChatId);
         } catch (Exception e) {
-            log.error("텔레그램 알림 전송 중 에러 발생: {}", e.getMessage());
+            log.error("텔레그램 전송 에러: {}", e.getMessage());
         }
     }
 }

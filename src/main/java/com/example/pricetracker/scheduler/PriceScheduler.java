@@ -5,7 +5,7 @@ import com.example.pricetracker.entity.PriceHistory;
 import com.example.pricetracker.repository.ProductRepository;
 import com.example.pricetracker.repository.PriceHistoryRepository;
 import com.example.pricetracker.service.NaverShoppingService;
-import com.example.pricetracker.service.TelegramService; // 추가
+import com.example.pricetracker.service.TelegramService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,9 +23,9 @@ public class PriceScheduler {
     private final ProductRepository productRepository;
     private final PriceHistoryRepository priceHistoryRepository;
     private final NaverShoppingService naverShoppingService;
-    private final TelegramService telegramService; // 추가
+    private final TelegramService telegramService;
 
-    @Scheduled(fixedDelay = 60000000)
+    @Scheduled(fixedDelay = 60000) // 🔥 1분(60초)마다 실행으로 원복
     @Transactional
     public void updatePrices() {
         log.info("=== 정기 가격 업데이트 스케줄러 실행 ===");
@@ -39,7 +39,7 @@ public class PriceScheduler {
                 PriceHistory history = new PriceHistory(product, latestPrice);
                 priceHistoryRepository.save(history);
 
-                log.info("상품명: {}, 최신가격: {}", product.getProductName(), latestPrice);
+                log.info("상품명: {}, 최신가격: {} (주인: {})", product.getProductName(), latestPrice, product.getChatId());
 
                 checkTargetPriceAndNotify(product, latestPrice);
 
@@ -56,8 +56,11 @@ public class PriceScheduler {
                     product.getProductName(), currentPrice, product.getTargetPrice(), product.getProductUrl()
             );
 
-            // 🔥 실제로 텔레그램 메시지 전송
-            telegramService.sendMessage(message);
+            // 🔥 해당 상품을 등록한 유저의 chatId로 정확히 타겟팅하여 발송!
+            telegramService.sendMessage(product.getChatId(), message);
+
+            // 알림 발송 후 중복 알람을 막기 위해 끕니다.
+            product.setAlarmEnabled(false);
         }
     }
 }

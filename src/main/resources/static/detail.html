@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>상품 상세 - PriceTracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        }
+    </script>
+    <style> ::-webkit-scrollbar { display: none; } </style>
+</head>
+<body class="bg-gray-50 dark:bg-[#0f172a] text-gray-800 dark:text-gray-100 font-sans max-w-md mx-auto min-h-screen relative shadow-xl transition-colors duration-300 pb-24">
+
+<header class="bg-white dark:bg-[#1e293b] p-4 sticky top-0 z-20 shadow-sm border-b border-gray-200 dark:border-gray-800 flex justify-between items-center transition-colors">
+    <button onclick="history.back()" class="text-xl font-bold p-1 hover:opacity-70">&lt;</button>
+    <h1 class="text-lg font-bold">상품 상세</h1>
+    <button onclick="location.href='/'" class="text-xl hover:opacity-70">🏠</button>
+</header>
+
+<main class="p-4 space-y-6">
+
+    <section class="bg-white dark:bg-[#1e293b] rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center relative overflow-hidden transition-colors">
+        <p id="catBreadcrumb" class="text-[10px] text-gray-400 self-start mb-2 w-full"></p>
+        <img id="detailImg" src="" alt="상품이미지" class="w-48 h-48 object-cover rounded-xl mb-6 bg-white mix-blend-multiply dark:mix-blend-normal">
+
+        <div class="w-full text-left">
+            <h2 id="detailName" class="text-lg font-extrabold leading-snug mb-1">불러오는 중...</h2>
+            <p id="detailMall" class="text-xs text-gray-400 mb-4">쇼핑몰</p>
+
+            <div class="flex justify-between items-end bg-gray-50 dark:bg-[#0f172a] p-4 rounded-xl">
+                <div>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-400 mb-1">현재 최저가</p>
+                    <p id="detailPrice" class="text-2xl font-black text-blue-600 dark:text-blue-400">0<span class="text-sm font-normal ml-0.5">원</span></p>
+                </div>
+                <div id="discountBadge" class="hidden text-right">
+                    <div class="bg-rose-600 text-white text-xs font-bold px-2 py-1 rounded shadow-sm mb-1">평균가 대비 <span id="detailRate">0</span>% 하락</div>
+                    <p class="text-[10px] text-gray-500">⬇ <span id="detailAmt">0</span>원 저렴</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="bg-white dark:bg-[#1e293b] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
+        <div class="flex justify-between items-start mb-2">
+            <div>
+                <h3 class="font-bold text-sm">💡 Tracker 구매 제안</h3>
+                <p class="text-[10px] text-gray-400">시장 평균가 데이터를 기반으로 한 추천입니다.</p>
+            </div>
+            <div class="bg-rose-600/10 text-rose-500 text-[10px] font-bold px-2 py-1 rounded-full animate-pulse border border-rose-600/20">
+                실시간 분석 완료
+            </div>
+        </div>
+
+        <div id="suggestionBox" class="border rounded-xl p-4 text-center mb-5 mt-3 transition-colors">
+            <p id="suggestionIcon" class="text-lg mb-1">🔥</p>
+            <p id="suggestionTitle" class="font-black text-sm"></p>
+            <p id="suggestionDesc" class="text-xs mt-1"></p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <div class="bg-gray-50 dark:bg-[#0f172a] p-3 rounded-xl border border-gray-100 dark:border-gray-800 text-center">
+                <p class="text-[10px] text-gray-500 mb-1">예상 저점 기준</p>
+                <p id="lowPointTxt" class="text-rose-500 font-bold text-sm">0원</p>
+                <p class="text-[9px] text-gray-400 mt-1">이하이면 적극 추천!</p>
+            </div>
+            <div class="bg-gray-50 dark:bg-[#0f172a] p-3 rounded-xl border border-gray-100 dark:border-gray-800 text-center">
+                <p class="text-[10px] text-gray-500 mb-1">예상 고점 기준</p>
+                <p id="highPointTxt" class="text-blue-500 font-bold text-sm">0원</p>
+                <p class="text-[9px] text-gray-400 mt-1">이상이면 잠시 숨 고르기</p>
+            </div>
+        </div>
+
+        <div class="relative w-full pt-4 pb-2">
+            <div id="pinLabel" class="absolute top-0 text-[10px] font-bold text-white bg-gray-800 dark:bg-gray-600 px-1.5 py-0.5 rounded shadow-sm transform -translate-x-1/2 transition-all duration-500 z-10">
+                현재가
+            </div>
+            <div class="h-2.5 w-full rounded-full bg-gradient-to-r from-rose-500 via-yellow-400 to-blue-600 relative">
+                <div id="pricePin" class="absolute top-[-3px] w-1.5 h-4 bg-white dark:bg-gray-200 rounded-full shadow-md border border-gray-400 transform -translate-x-1/2 transition-all duration-500 z-0" style="left: 50%;"></div>
+            </div>
+            <div class="flex justify-between text-[10px] text-gray-500 font-medium mt-1">
+                <span>↑최저점</span>
+                <span>평시가</span>
+                <span>최고점↑</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="bg-white dark:bg-[#1e293b] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
+        <h3 class="font-bold mb-1 text-sm">🔔 목표가 알림 설정</h3>
+        <p class="text-[10px] text-gray-400 mb-4">원하는 가격에 도달하면 텔레그램으로 알려드립니다.</p>
+
+        <label class="block text-xs font-bold text-gray-600 dark:text-gray-300 mb-2">목표 가격 (이하 도달 시 알림)</label>
+        <div class="flex gap-2">
+            <input type="number" id="targetPriceInput" class="flex-1 bg-gray-50 dark:bg-[#0f172a] border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:outline-none focus:border-blue-500 font-bold">
+            <button onclick="saveAlert()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg px-4 transition-colors text-sm whitespace-nowrap">
+                추적 시작
+            </button>
+        </div>
+    </section>
+
+    <section class="bg-white dark:bg-[#1e293b] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 transition-colors relative">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-sm">📈 가격 변동 그래프</h3>
+        </div>
+
+        <div class="w-full h-48 relative">
+            <div id="chartEmptyMessage" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-white/80 dark:bg-[#1e293b]/80 z-10 backdrop-blur-sm rounded-xl">
+                <span class="text-2xl mb-2">🕵️‍♂️</span>
+                <p class="text-sm font-bold text-gray-700 dark:text-gray-300">아직 추적되지 않은 상품입니다.</p>
+                <p class="text-[10px] text-gray-500 mt-1">위에서 [추적 시작]을 누르면 실시간 기록이 시작됩니다.</p>
+            </div>
+            <canvas id="priceChart"></canvas>
+        </div>
+    </section>
+</main>
+
+<div class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white dark:bg-[#1e293b] border-t border-gray-200 dark:border-gray-800 p-3 flex gap-2 z-30 pb-safe transition-colors shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+    <button class="w-1/3 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-white font-bold py-3 rounded-xl text-sm transition hover:bg-gray-200 dark:hover:bg-gray-700">공유하기</button>
+    <button onclick="goToMall()" class="w-2/3 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-lg shadow-rose-500/30">최저가 구매하기</button>
+</div>
+
+<script>
+    // URL 데이터 파싱
+    const params = new URLSearchParams(window.location.search);
+    const pName = params.get('name') || '';
+    const pPrice = parseInt(params.get('price')) || 0;
+    const pRate = parseInt(params.get('rate')) || 0;
+    const pAmt = parseInt(params.get('amt')) || 0;
+    const pLink = params.get('link') || ''; // 🔥 받아온 링크
+
+    document.getElementById('catBreadcrumb').innerText = `${params.get('cat') || ''} > ${params.get('mall') || ''}`;
+    document.getElementById('detailName').innerText = pName;
+    document.getElementById('detailPrice').innerHTML = `${pPrice.toLocaleString()}<span class="text-sm ml-0.5 font-normal">원</span>`;
+    document.getElementById('detailImg').src = params.get('img') || '';
+    document.getElementById('targetPriceInput').value = pPrice;
+
+    // 🔥 쇼핑몰 이동 함수 연결
+    function goToMall() {
+        if (pLink && pLink !== 'null' && pLink !== '') {
+            window.open(decodeURIComponent(pLink), '_blank'); // 새 창에서 링크 열기
+        } else {
+            alert('상품 링크 정보를 불러올 수 없습니다.');
+        }
+    }
+
+    // 게이지 UI 렌더링
+    function renderSuggestionUI() {
+        const avgPrice = pPrice + pAmt;
+        const lowPoint = Math.min(pPrice, Math.floor(avgPrice * 0.8));
+        const highPoint = Math.floor(avgPrice * 1.2);
+
+        document.getElementById('lowPointTxt').innerText = lowPoint.toLocaleString() + '원';
+        document.getElementById('highPointTxt').innerText = highPoint.toLocaleString() + '원';
+
+        let positionPercent = 50;
+        if (highPoint > lowPoint) {
+            positionPercent = ((pPrice - lowPoint) / (highPoint - lowPoint)) * 100;
+            positionPercent = Math.max(5, Math.min(positionPercent, 95));
+        }
+
+        setTimeout(() => {
+            document.getElementById('pricePin').style.left = `${positionPercent}%`;
+            document.getElementById('pinLabel').style.left = `${positionPercent}%`;
+        }, 300);
+
+        const box = document.getElementById('suggestionBox');
+        const icon = document.getElementById('suggestionIcon');
+        const title = document.getElementById('suggestionTitle');
+        const desc = document.getElementById('suggestionDesc');
+
+        if (pRate > 20) {
+            box.className = "border rounded-xl p-4 text-center mb-5 mt-3 transition-colors bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400";
+            icon.innerText = "🔥";
+            title.innerText = "역대급 저점 도달입니다!";
+            desc.innerText = "고민하면 품절됩니다. 지금 당장 구매를 추천합니다.";
+            document.getElementById('discountBadge').classList.remove('hidden');
+            document.getElementById('detailRate').innerText = pRate;
+            document.getElementById('detailAmt').innerText = pAmt.toLocaleString();
+        } else if (pRate > 0) {
+            box.className = "border rounded-xl p-4 text-center mb-5 mt-3 transition-colors bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-500";
+            icon.innerText = "✨";
+            title.innerText = "평시가보다 저렴합니다.";
+            desc.innerText = "나쁘지 않은 가격입니다. 구매하셔도 좋습니다.";
+            document.getElementById('discountBadge').classList.remove('hidden');
+            document.getElementById('detailRate').innerText = pRate;
+            document.getElementById('detailAmt').innerText = pAmt.toLocaleString();
+        } else {
+            box.className = "border rounded-xl p-4 text-center mb-5 mt-3 transition-colors bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400";
+            icon.innerText = "🧊";
+            title.innerText = "현재 고점(비싼 가격)입니다.";
+            desc.innerText = "지금 사면 호갱! 목표가를 설정하고 가격 하락을 기다리세요.";
+        }
+    }
+    renderSuggestionUI();
+
+    // 추적 등록 API
+    async function saveAlert() {
+        const target = document.getElementById('targetPriceInput').value;
+        if (!target) return;
+        try {
+            const res = await fetch('/api/products', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productName: pName, targetPrice: parseInt(target), alarmEnabled: true, productUrl: decodeURIComponent(pLink) })
+            });
+            if (res.ok) {
+                alert('추적이 시작되었습니다! 스케줄러가 가격을 수집합니다.');
+                location.reload();
+            }
+        } catch (e) { alert('오류가 발생했습니다.'); }
+    }
+
+    // 차트 렌더링
+    async function renderChart() {
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        const isDark = document.documentElement.classList.contains('dark');
+        try {
+            const response = await fetch(`/api/products/history?productName=${encodeURIComponent(pName)}`);
+            const historyData = await response.json();
+            let labels = [], dataPoints = [];
+
+            if (historyData && historyData.length > 0) {
+                historyData.forEach(item => { labels.push(item.date); dataPoints.push(item.price); });
+            } else {
+                labels.push(`${new Date().getMonth()+1}.${new Date().getDate()}`); dataPoints.push(pPrice);
+                document.getElementById('chartEmptyMessage').classList.remove('hidden');
+            }
+
+            new Chart(ctx, {
+                type: 'line',
+                data: { labels: labels, datasets: [{ label: '최저가', data: dataPoints, borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 2, pointBackgroundColor: '#2563eb', pointRadius: 4, fill: true, tension: 0.2 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: isDark ? '#94a3b8' : '#64748b' } },
+                        y: { grid: { color: isDark ? '#334155' : '#e2e8f0' }, ticks: { color: isDark ? '#94a3b8' : '#64748b', callback: val => val.toLocaleString() } }
+                    }
+                }
+            });
+        } catch (e) { console.error(e); }
+    }
+    renderChart();
+</script>
+</body>
+</html>
