@@ -1,58 +1,71 @@
 package com.example.pricetracker.service;
 
+import com.example.pricetracker.entity.Product;
+import com.example.pricetracker.repository.ProductRepository; // 🔥 추가
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor // 🔥 추가
 public class TelegramAuthService {
 
     @Value("${telegram.bot.token}")
     private String token;
 
-    // 🔥 핵심: 브라우저가 생성한 UUID와 실제 텔레그램 Chat ID를 짝지어두는 임시 저장소
+    private final ProductRepository productRepository; // 🔥 추가
+    private final TelegramService telegramService;     // 🔥 추가
+
     public static final Map<String, String> authStorage = new ConcurrentHashMap<>();
     private long lastUpdateId = 0;
 
-    @Scheduled(fixedDelay = 2000) // 2초마다 텔레그램 메시지 확인
+    @Scheduled(fixedDelay = 2000)
     public void checkTelegramMessages() {
         try {
             RestTemplate restTemplate = new RestTemplate();
-            // 최신 메시지만 가져오기 위해 offset 사용
             String url = "https://api.telegram.org/bot" + token + "/getUpdates?offset=" + (lastUpdateId + 1);
-
             String response = restTemplate.getForObject(url, String.class);
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(response);
-            JsonNode result = root.path("result");
+            JsonNode result = new ObjectMapper().readTree(response).path("result");
 
             if (result.isArray()) {
                 for (JsonNode node : result) {
                     lastUpdateId = node.path("update_id").asLong();
                     JsonNode message = node.path("message");
                     String text = message.path("text").asText("");
+                    String chatId = message.path("chat").path("id").asText();
 
-                    // 💡 누군가 딥링크(예: /start 7a8b9c)를 클릭해서 봇방에 들어온 경우!
+                    // 💡 로그인 딥링크 처리
                     if (text.startsWith("/start ")) {
-                        String uuid = text.substring(7).trim(); // "7a8b9c" 추출
-                        String chatId = message.path("chat").path("id").asText();
-
-                        // 저장소에 매핑 완료
+                        String uuid = text.substring(7).trim();
                         authStorage.put(uuid, chatId);
-                        log.info("🎉 텔레그램 인증 성공! UUID: {}, ChatID: {}", uuid, chatId);
+                        telegramService.sendMessage(chatId, "✅ PriceTracker 연동이 완료되었습니다!\n\n명령어 안내:\n/list - 내 추적 목록 보기");
+                    }
+                    // 💡 내 추적 목록 불러오기 (양방향 명령어)
+                    else if (text.equalsIgnoreCase("/list")) {
+                        List<Product> myProducts = productRepository.findByChatId(chatId);
+                        if (myProducts.isEmpty()) {
+                            telegramService.sendMessage(chatId, "텅~ 🛒\n현재 추적 중인 상품이 없습니다.");
+                        } else {
+                            StringBuilder sb = new StringBuilder("📋 [내 추적 목록]\n\n");
+                            for (Product p : myProducts) {
+                                sb.append("🔹 ").append(p.getProductName()).append("\n")
+                                        .append("   - 현재: ").append(String.format("%,d", p.getCurrentPrice())).append("원\n")
+                                        .append("   - 목표: ").append(String.format("%,d", p.getTargetPrice())).append("원\n\n");
+                            }
+                            telegramService.sendMessage(chatId, sb.toString());
+                        }
                     }
                 }
             }
-        } catch (Exception e) {
-            // 로깅 생략 (에러 시 무시하고 다음 주기에 재시도)
-        }
+        } catch (Exception e) {}
     }
 }

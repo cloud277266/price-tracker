@@ -1,5 +1,6 @@
 package com.example.pricetracker.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore; // 🔥 무한루프 방지를 위한 필수 import
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,6 +18,7 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String chatId;
 
     private String productName;   // 상품명
@@ -34,7 +36,9 @@ public class Product {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // 🔥 스케줄러와 이력을 위해 추가된 부분 1: PriceHistory와의 1:N 관계 설정
+    // 🔥 핵심 해결책: 프론트엔드에 데이터를 보낼 때 가격 변동 내역(PriceHistory)은
+    // JSON 변환 과정에서 제외하여 무한 루프(순환 참조) 에러를 원천 차단합니다!
+    @JsonIgnore
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private List<PriceHistory> priceHistories = new ArrayList<>();
 
@@ -49,7 +53,6 @@ public class Product {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // 🔥 스케줄러와 이력을 위해 추가된 부분 2: 가격 업데이트 편의 메서드
     public void updatePrice(int newPrice) {
         this.currentPrice = newPrice;
     }
