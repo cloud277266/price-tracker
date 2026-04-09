@@ -23,7 +23,6 @@ public class ProductService {
     private final PriceHistoryRepository priceHistoryRepository;
 
     public Product addProduct(ProductRequestDto dto) {
-        // 🔥 이름뿐만 아니라 내 아이디(chatId)까지 일치해야 내 기존 상품으로 인정
         Optional<Product> existing = productRepository.findByProductNameAndChatId(dto.getProductName(), dto.getChatId());
         if (existing.isPresent()) {
             Product product = existing.get();
@@ -33,7 +32,7 @@ public class ProductService {
         }
 
         Product product = new Product();
-        product.setChatId(dto.getChatId()); // 🔥 DB에 주인 명찰 기록!
+        product.setChatId(dto.getChatId());
         product.setProductName(dto.getProductName());
         product.setProductUrl(dto.getProductUrl() != null ? dto.getProductUrl() : "");
         product.setTargetPrice(dto.getTargetPrice());
@@ -41,7 +40,6 @@ public class ProductService {
         product.setAlarmEnabled(true);
 
         Product savedProduct = productRepository.save(product);
-
         priceHistoryRepository.save(new PriceHistory(savedProduct, dto.getTargetPrice()));
         return savedProduct;
     }
@@ -50,8 +48,20 @@ public class ProductService {
         return productRepository.findAll();
     }
 
+    // 🔥 1. 내 아이디(chatId)로 등록된 상품만 모두 가져오기
+    public List<Product> getMyProducts(String chatId) {
+        return productRepository.findByChatId(chatId);
+    }
+
+    // 🔥 2. 내가 등록한 상품 삭제하기 (보안을 위해 chatId도 확인)
+    public void deleteProduct(Long id, String chatId) {
+        Optional<Product> product = productRepository.findById(id);
+        if (product.isPresent() && product.get().getChatId().equals(chatId)) {
+            productRepository.delete(product.get());
+        }
+    }
+
     public List<Map<String, Object>> getPriceHistoryFormatted(String productName) {
-        // 🔥 주의: 차트 표시는 임시로 첫 번째 상품 기준으로 띄웁니다 (추후 고도화 필요)
         Optional<Product> productOpt = productRepository.findByProductNameAndChatId(productName, "임시").or(() -> productRepository.findAll().stream().filter(p -> p.getProductName().equals(productName)).findFirst());
 
         if (productOpt.isEmpty()) {
@@ -59,7 +69,6 @@ public class ProductService {
         }
 
         List<PriceHistory> histories = priceHistoryRepository.findByProductOrderByCreatedAtAsc(productOpt.get());
-
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM.dd HH:mm");
 
         return histories.stream().map(h -> {

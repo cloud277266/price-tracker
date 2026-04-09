@@ -6,13 +6,9 @@
     <title>가격 추적기 홈</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Tailwind 다크모드 설정
         tailwind.config = { darkMode: 'class' }
-        // 페이지 로드 시 로컬스토리지에서 테마 확인
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark')
-        } else {
-            document.documentElement.classList.remove('dark')
         }
     </script>
     <style>
@@ -25,14 +21,12 @@
 <header class="bg-blue-600 dark:bg-[#1e293b] text-white p-4 shrink-0 shadow-sm z-20 relative transition-colors duration-300">
     <div class="flex justify-between items-center">
         <h1 class="text-xl font-extrabold tracking-tight">🎯 PriceTracker</h1>
-
         <div class="flex items-center gap-4">
             <button onclick="toggleTheme()" id="themeBtn" class="text-xl hover:opacity-80 transition">🌙</button>
             <button onclick="toggleSearch()" class="text-xl hover:opacity-80 transition">🔍</button>
             <button class="text-xl hover:opacity-80 transition">🔔</button>
         </div>
     </div>
-
     <div id="searchDropdown" class="hidden absolute top-full left-0 w-full bg-blue-600 dark:bg-[#1e293b] px-4 pb-4 pt-1 shadow-md transition-all">
         <div class="relative flex items-center bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-inner">
             <input type="text" id="searchInput" placeholder="찾으시는 상품이 있나요?"
@@ -61,11 +55,11 @@
     <div id="productList" class="bg-white dark:bg-[#1e293b] divide-y divide-gray-100 dark:divide-gray-800 transition-colors"></div>
 
     <div class="flex justify-center items-center space-x-2 p-6 bg-gray-50 dark:bg-[#0f172a] transition-colors">
-        <button onclick="prevPage()" id="prevBtn" class="w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 rounded-md disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-700 transition" disabled>
+        <button onclick="prevPage()" id="prevBtn" class="w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 rounded-md disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-700 transition" disabled>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
         </button>
         <div id="pageNumbers" class="flex space-x-1"></div>
-        <button onclick="nextPage()" id="nextBtn" class="w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+        <button onclick="nextPage()" id="nextBtn" class="w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
         </button>
     </div>
@@ -75,86 +69,87 @@
     <button class="flex flex-col items-center justify-center w-full h-full text-blue-600 dark:text-blue-400">
         <span class="text-xl mb-0.5">🏠</span><span class="text-[10px] font-bold">홈</span>
     </button>
-    <button onclick="alert('추적 목록 화면 개발 예정!')" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition">
+    <button onclick="location.href='/tracking.html'" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition">
         <span class="text-xl mb-0.5">❤️</span><span class="text-[10px] font-bold">추적목록</span>
     </button>
-    <button onclick="alert('회원가입/로그인 연결 예정!')" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition">
+    <button onclick="location.href='/login.html'" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition">
         <span class="text-xl mb-0.5">👤</span><span class="text-[10px] font-bold">내정보</span>
     </button>
 </nav>
 
+<div id="trackModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+    <div class="bg-white dark:bg-[#1e293b] w-full max-w-sm rounded-2xl p-6 shadow-xl transform transition-all">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="font-extrabold text-lg text-gray-900 dark:text-white">🔔 알림 가격 설정</h3>
+            <button onclick="closeTrackModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl leading-none">&times;</button>
+        </div>
+
+        <p id="modalProductName" class="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2 line-clamp-2 leading-snug"></p>
+        <div class="flex justify-between items-end bg-gray-50 dark:bg-[#0f172a] p-4 rounded-xl mb-5 border border-gray-100 dark:border-gray-800">
+            <span class="text-xs text-gray-500 font-medium">현재 최저가</span>
+            <span id="modalCurrentPrice" class="font-black text-blue-600 dark:text-blue-400 text-xl"></span>
+        </div>
+
+        <div class="mb-5">
+            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-2">얼마로 떨어지면 알림을 받을까요?</label>
+            <div class="relative flex items-center mb-3">
+                <input type="number" id="modalTargetPrice" class="w-full bg-white dark:bg-[#0f172a] border border-gray-300 dark:border-gray-600 rounded-xl py-3 pl-4 pr-10 text-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-bold dark:text-white transition" placeholder="숫자만 입력">
+                <span class="absolute right-4 text-gray-500 font-medium">원</span>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="applyDiscount(0.05)" class="flex-1 py-2 text-[11px] font-bold bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400 rounded-lg hover:bg-rose-100 transition">-5%</button>
+                <button onclick="applyDiscount(0.10)" class="flex-1 py-2 text-[11px] font-bold bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400 rounded-lg hover:bg-rose-100 transition">-10%</button>
+                <button onclick="applyDiscount(0.20)" class="flex-1 py-2 text-[11px] font-bold bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400 rounded-lg hover:bg-rose-100 transition">-20%</button>
+            </div>
+        </div>
+
+        <button id="modalSubmitBtn" class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3.5 rounded-xl transition shadow-md shadow-blue-500/20">
+            이 가격으로 추적 시작
+        </button>
+    </div>
+</div>
+
 <script>
-    // 🔥 테마 토글 로직
     function toggleTheme() {
         document.documentElement.classList.toggle('dark');
         const isDark = document.documentElement.classList.contains('dark');
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
         updateThemeIcon(isDark);
     }
-    function updateThemeIcon(isDark) {
-        document.getElementById('themeBtn').innerText = isDark ? '☀️' : '🌙';
-    }
-    // 초기 아이콘 세팅
+    function updateThemeIcon(isDark) { document.getElementById('themeBtn').innerText = isDark ? '☀️' : '🌙'; }
     updateThemeIcon(document.documentElement.classList.contains('dark'));
 
-    const categories = [
-        { name: "노트북", icon: "💻" }, { name: "태블릿", icon: "📱" }, { name: "모니터", icon: "🖥️" },
-        { name: "세탁기", icon: "👕" }, { name: "건조기", icon: "♨️" }, { name: "냉장고", icon: "❄️" }
-    ];
-
-    let currentKeyword = '노트북';
-    let currentSort = 'asc';
-    let currentPage = 1;
+    const categories = [{ name: "노트북", icon: "💻" }, { name: "태블릿", icon: "📱" }, { name: "모니터", icon: "🖥️" }, { name: "세탁기", icon: "👕" }, { name: "건조기", icon: "♨️" }, { name: "냉장고", icon: "❄️" }];
+    let currentKeyword = '노트북', currentSort = 'asc', currentPage = 1;
 
     document.addEventListener('DOMContentLoaded', () => { renderCategories(); fetchProducts(); });
 
     function toggleSearch() {
-        const dropdown = document.getElementById('searchDropdown');
-        dropdown.classList.toggle('hidden');
-        if (!dropdown.classList.contains('hidden')) document.getElementById('searchInput').focus();
+        const d = document.getElementById('searchDropdown'); d.classList.toggle('hidden');
+        if (!d.classList.contains('hidden')) document.getElementById('searchInput').focus();
     }
 
     function renderCategories() {
-        const gridDiv = document.getElementById('categoryGrid');
-        gridDiv.innerHTML = categories.map(cat => {
+        document.getElementById('categoryGrid').innerHTML = categories.map(cat => {
             const isActive = cat.name === currentKeyword;
-            return `
-                <button onclick="clickCategory('${cat.name}')"
-                    class="flex flex-row items-center justify-center gap-1.5 py-2 px-1 rounded-lg border transition-all duration-200 ${isActive ? 'bg-gray-800 dark:bg-blue-600 text-white border-gray-800 dark:border-blue-600 shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'}">
-                    <span class="text-sm">${cat.icon}</span>
-                    <span class="text-[11px] sm:text-xs ${isActive ? 'font-bold' : 'font-medium'} whitespace-nowrap">${cat.name}</span>
-                </button>`}).join('');
+            return `<button onclick="clickCategory('${cat.name}')" class="flex flex-row items-center justify-center gap-1.5 py-2 px-1 rounded-lg border transition-all duration-200 ${isActive ? 'bg-gray-800 dark:bg-blue-600 text-white border-gray-800 dark:border-blue-600 shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'}"><span class="text-sm">${cat.icon}</span><span class="text-[11px] sm:text-xs ${isActive ? 'font-bold' : 'font-medium'} whitespace-nowrap">${cat.name}</span></button>`
+        }).join('');
     }
 
-    function clickCategory(categoryName) {
-        currentKeyword = categoryName; document.getElementById('searchInput').value = '';
-        document.getElementById('searchDropdown').classList.add('hidden'); currentPage = 1;
-        renderCategories(); fetchProducts();
-    }
-
-    function executeSearch() {
-        const inputVal = document.getElementById('searchInput').value.trim();
-        if (!inputVal) { alert('검색어를 입력해주세요.'); return; }
-        currentKeyword = inputVal; currentPage = 1;
-        document.getElementById('searchDropdown').classList.add('hidden');
-        renderCategories(); fetchProducts();
-    }
-
+    function clickCategory(c) { currentKeyword = c; document.getElementById('searchInput').value = ''; document.getElementById('searchDropdown').classList.add('hidden'); currentPage = 1; renderCategories(); fetchProducts(); }
+    function executeSearch() { const v = document.getElementById('searchInput').value.trim(); if (!v) return; currentKeyword = v; currentPage = 1; document.getElementById('searchDropdown').classList.add('hidden'); renderCategories(); fetchProducts(); }
     function changeSort() { currentSort = document.getElementById('sortSelect').value; currentPage = 1; fetchProducts(); }
 
     function renderPagination() {
-        const pageDiv = document.getElementById('pageNumbers');
         document.getElementById('prevBtn').disabled = (currentPage === 1);
         let startPage = Math.max(1, currentPage - 2);
         let html = '';
         for(let i = startPage; i <= startPage + 4; i++) {
-            if(i === currentPage) {
-                html += `<button class="w-8 h-8 flex items-center justify-center bg-blue-600 text-white text-sm font-bold rounded-md shadow-sm">${i}</button>`;
-            } else {
-                html += `<button onclick="goToPage(${i})" class="w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition">${i}</button>`;
-            }
+            if(i === currentPage) html += `<button class="w-8 h-8 flex items-center justify-center bg-blue-600 text-white text-sm font-bold rounded-md shadow-sm">${i}</button>`;
+            else html += `<button onclick="goToPage(${i})" class="w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition">${i}</button>`;
         }
-        pageDiv.innerHTML = html;
+        document.getElementById('pageNumbers').innerHTML = html;
     }
 
     function prevPage() { if (currentPage > 1) { currentPage--; fetchProducts(); } }
@@ -163,17 +158,12 @@
 
     async function fetchProducts() {
         const listDiv = document.getElementById('productList');
-        listDiv.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-16">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">데이터를 불러오고 있습니다...</p>
-                </div>`;
+        listDiv.innerHTML = `<div class="flex flex-col items-center justify-center py-16"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div><p class="text-sm text-gray-500 dark:text-gray-400 font-medium">데이터를 불러오고 있습니다...</p></div>`;
         document.getElementById('searchKeywordInfo').innerText = `'${currentKeyword}' 검색 결과`;
         renderPagination();
 
         try {
             const response = await fetch(`/api/products/search?keyword=${encodeURIComponent(currentKeyword)}&display=10&page=${currentPage}&sort=${currentSort}`);
-            if (!response.ok) throw new Error('API 오류');
             const data = await response.json();
             let items = typeof data === 'string' ? JSON.parse(data).items : data.items;
 
@@ -183,45 +173,21 @@
             items.forEach(item => {
                 const cleanTitle = item.title.replace(/<[^>]*>?/gm, '').replace(/'/g, "\\'");
                 const priceNum = parseInt(item.lprice);
-                const discountRate = item.discountRate || 0;
-                const discountAmount = item.discountAmount || 0;
+                const discountRate = item.discountRate || 0, discountAmount = item.discountAmount || 0;
 
                 let discountHtml = '';
                 if (discountRate > 0) {
-                    discountHtml = `
-                            <div class="bg-rose-600 text-white text-[11px] font-extrabold px-1.5 py-0.5 rounded flex items-center gap-1 mb-1 shadow-sm w-fit">
-                                <span>↓ ${discountRate}%</span>
-                            </div>
-                            <span class="text-[10px] text-gray-400 line-through mb-0.5">${(priceNum + discountAmount).toLocaleString()}원</span>`;
+                    discountHtml = `<div class="bg-rose-600 text-white text-[11px] font-extrabold px-1.5 py-0.5 rounded flex items-center gap-1 mb-1 shadow-sm w-fit"><span>↓ ${discountRate}%</span></div><span class="text-[10px] text-gray-400 line-through mb-0.5">${(priceNum + discountAmount).toLocaleString()}원</span>`;
                 }
-
-                // 🔥 상세 페이지 이동을 위한 파라미터 전달
-                const imgUrl = encodeURIComponent(item.image);
-                const mallName = encodeURIComponent(item.mallName);
-                const linkUrl = encodeURIComponent(item.link); // 네이버 쇼핑 링크 추가
+                const imgUrl = encodeURIComponent(item.image), mallName = encodeURIComponent(item.mallName), linkUrl = encodeURIComponent(item.link || '');
 
                 const html = `
-                        <div onclick="goToDetail('${cleanTitle}', ${priceNum}, '${imgUrl}', '${mallName}', ${discountRate}, ${discountAmount}, '${linkUrl}')"
-                             class="flex p-4 hover:bg-blue-50 dark:hover:bg-gray-800 transition cursor-pointer active:bg-gray-100 dark:active:bg-gray-700 border-b border-gray-100 dark:border-gray-800">
-                            <div class="relative">
-                                <img src="${item.image}" alt="상품이미지" class="w-24 h-24 object-cover rounded-xl border border-gray-100 dark:border-gray-700 shrink-0 bg-white">
-                                ${discountRate > 0 ? `<div class="absolute -top-2 -right-2 bg-rose-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white dark:border-[#1e293b]">특가</div>` : ''}
-                            </div>
-
+                        <div onclick="goToDetail('${cleanTitle}', ${priceNum}, '${imgUrl}', '${mallName}', ${discountRate}, ${discountAmount}, '${linkUrl}')" class="flex p-4 hover:bg-blue-50 dark:hover:bg-gray-800 transition cursor-pointer active:bg-gray-100 dark:active:bg-gray-700 border-b border-gray-100 dark:border-gray-800">
+                            <div class="relative"><img src="${item.image}" alt="상품이미지" class="w-24 h-24 object-cover rounded-xl border border-gray-100 dark:border-gray-700 shrink-0 bg-white">${discountRate > 0 ? `<div class="absolute -top-2 -right-2 bg-rose-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white dark:border-[#1e293b]">특가</div>` : ''}</div>
                             <div class="ml-4 flex-1 overflow-hidden flex flex-col justify-between">
-                                <div>
-                                    <p class="text-[10px] text-gray-400 font-medium mb-0.5">${item.mallName}</p>
-                                    <h3 class="text-sm font-bold text-gray-800 dark:text-gray-100 line-clamp-2 leading-snug">${cleanTitle}</h3>
-                                </div>
-                                <div class="flex justify-between items-end mt-2">
-                                    <div class="flex flex-col">
-                                        ${discountHtml}
-                                        <span class="text-lg font-extrabold text-gray-900 dark:text-white tracking-tight">${priceNum.toLocaleString()}<span class="text-sm font-medium text-gray-600 dark:text-gray-400 ml-0.5">원</span></span>
-                                    </div>
-                                    <button onclick="event.stopPropagation(); trackProduct('${cleanTitle}', ${priceNum})" class="px-3.5 py-2 bg-gray-900 dark:bg-blue-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-gray-800 dark:hover:bg-blue-700 active:scale-95 transition-transform whitespace-nowrap">
-                                        추적담기
-                                    </button>
-                                </div>
+                                <div><p class="text-[10px] text-gray-400 font-medium mb-0.5">${item.mallName}</p><h3 class="text-sm font-bold text-gray-800 dark:text-gray-100 line-clamp-2 leading-snug">${cleanTitle}</h3></div>
+                                <div class="flex justify-between items-end mt-2"><div class="flex flex-col">${discountHtml}<span class="text-lg font-extrabold text-gray-900 dark:text-white tracking-tight">${priceNum.toLocaleString()}<span class="text-sm font-medium text-gray-600 dark:text-gray-400 ml-0.5">원</span></span></div>
+                                <button onclick="event.stopPropagation(); openTrackModal('${cleanTitle}', ${priceNum}, '${linkUrl}')" class="px-3.5 py-2 bg-gray-900 dark:bg-blue-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-gray-800 active:scale-95 transition-transform whitespace-nowrap">추적담기</button></div>
                             </div>
                         </div>`;
                 listDiv.insertAdjacentHTML('beforeend', html);
@@ -229,24 +195,80 @@
         } catch (error) { listDiv.innerHTML = '<div class="p-10 text-center text-red-500 font-medium">서버와 연결할 수 없습니다.</div>'; }
     }
 
-    // 🔥 URL을 통해 상세페이지로 파라미터 전달
     function goToDetail(name, price, img, mall, rate, amt, link) {
-        // url 끝부분에 &link=${link} 가 추가되었습니다!
-        const url = `/detail.html?name=${encodeURIComponent(name)}&price=${price}&img=${img}&mall=${mall}&rate=${rate}&amt=${amt}&link=${link}&cat=${encodeURIComponent(currentKeyword)}`;
-        window.location.href = url;
+        window.location.href = `/detail.html?name=${encodeURIComponent(name)}&price=${price}&img=${img}&mall=${mall}&rate=${rate}&amt=${amt}&link=${link}&cat=${encodeURIComponent(currentKeyword)}`;
     }
 
-    async function trackProduct(name, price) {
-        if (!confirm(`[${name}]\n이 상품을 현재가(${price.toLocaleString()}원) 기준으로 추적 목록에 담으시겠습니까?`)) return;
-        try {
-            const response = await fetch('/api/products', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ productName: name, targetPrice: price, alarmEnabled: true })
-            });
-            if (response.ok) alert('성공적으로 추적 목록에 담겼습니다!');
-            else alert('등록에 실패했습니다.');
-        } catch (error) { alert('서버와 통신 중 오류가 발생했습니다.'); }
+    // 🔥 새롭게 추가된 모달 및 추적 로직 (로그인 검사 포함)
+    let currentTrackItem = null;
+
+    function openTrackModal(name, price, link) {
+        // 💡 1. 텔레그램 로그인(chatId) 여부 검사
+        const userChatId = localStorage.getItem('chatId');
+        if (!userChatId) {
+            alert('나만의 추적 목록을 관리하려면 텔레그램 연동이 필요합니다.\n인증 페이지로 1초 만에 로그인하세요!');
+            window.location.href = '/login.html';
+            return;
+        }
+
+        // 💡 2. 모달에 데이터 세팅
+        currentTrackItem = { name, price, link: decodeURIComponent(link), chatId: userChatId };
+        document.getElementById('modalProductName').innerText = name;
+        document.getElementById('modalCurrentPrice').innerText = price.toLocaleString() + '원';
+
+        // 기본 제안가: 현재가에서 5% 할인된 금액
+        document.getElementById('modalTargetPrice').value = Math.floor(price * 0.95);
+
+        // 모달 열기
+        document.getElementById('trackModal').classList.remove('hidden');
     }
+
+    function closeTrackModal() {
+        document.getElementById('trackModal').classList.add('hidden');
+        currentTrackItem = null;
+    }
+
+    // 퀵 버튼 동작 함수
+    function applyDiscount(percent) {
+        if(!currentTrackItem) return;
+        const discounted = Math.floor(currentTrackItem.price * (1 - percent));
+        document.getElementById('modalTargetPrice').value = discounted;
+    }
+
+    // 모달 내 [추적 시작] 버튼 클릭 이벤트
+    document.getElementById('modalSubmitBtn').addEventListener('click', async () => {
+        if(!currentTrackItem) return;
+
+        const targetPrice = parseInt(document.getElementById('modalTargetPrice').value);
+        if (isNaN(targetPrice) || targetPrice <= 0) {
+            alert('올바른 목표 금액을 입력해주세요.');
+            return;
+        }
+
+        try {
+            // 백엔드 다중 사용자 구조에 맞게 chatId 포함하여 전송
+            const response = await fetch('/api/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chatId: currentTrackItem.chatId,
+                    productName: currentTrackItem.name,
+                    targetPrice: targetPrice,
+                    alarmEnabled: true,
+                    productUrl: currentTrackItem.link
+                })
+            });
+
+            if (response.ok) {
+                alert(`[${currentTrackItem.name}]\n목표가 ${targetPrice.toLocaleString()}원으로 추적이 시작되었습니다!\n\n하단 '추적목록' 탭에서 관리할 수 있습니다.`);
+                closeTrackModal();
+            } else {
+                alert('등록에 실패했습니다.');
+            }
+        } catch (error) {
+            alert('서버와 통신 중 오류가 발생했습니다.');
+        }
+    });
 </script>
 </body>
 </html>

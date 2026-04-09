@@ -29,6 +29,19 @@ public class ProductController {
         return ResponseEntity.ok(productService.getAllProducts());
     }
 
+    // 🔥 1. 내 추적 목록 가져오기 API
+    @GetMapping("/my")
+    public ResponseEntity<List<Product>> getMyProducts(@RequestParam String chatId) {
+        return ResponseEntity.ok(productService.getMyProducts(chatId));
+    }
+
+    // 🔥 2. 추적 상품 삭제 API
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id, @RequestParam String chatId) {
+        productService.deleteProduct(id, chatId);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/price-test")
     public ResponseEntity<String> priceTest(@RequestParam String productName) {
         int price = naverShoppingService.getLowestPrice(productName);
@@ -44,7 +57,6 @@ public class ProductController {
         return ResponseEntity.ok(naverShoppingService.searchProducts(keyword, display, page, sort));
     }
 
-    // 🔥 프론트엔드 차트용 데이터 제공 API
     @GetMapping("/history")
     public ResponseEntity<List<Map<String, Object>>> getProductHistory(@RequestParam String productName) {
         List<Map<String, Object>> historyData = productService.getPriceHistoryFormatted(productName);
