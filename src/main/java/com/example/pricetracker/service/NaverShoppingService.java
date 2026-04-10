@@ -23,11 +23,10 @@ public class NaverShoppingService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
 
-    // 🔥 생성자에서 WebClient를 미리 세팅 (재사용성 및 성능 극대화)
-    public NaverShoppingService(WebClient.Builder webClientBuilder,
-                                @Value("${naver.client.id}") String clientId,
+
+    public NaverShoppingService(@Value("${naver.client.id}") String clientId,
                                 @Value("${naver.client.secret}") String clientSecret) {
-        this.webClient = webClientBuilder
+        this.webClient = WebClient.builder() // 👈 여기가 핵심입니다. 직접 빌더를 생성합니다.
                 .baseUrl("https://openapi.naver.com")
                 .defaultHeader("X-Naver-Client-Id", clientId)
                 .defaultHeader("X-Naver-Client-Secret", clientSecret)
