@@ -1,9 +1,11 @@
 package com.example.pricetracker.scheduler;
 
 import com.example.pricetracker.entity.Member;
+import com.example.pricetracker.entity.NotificationHistory;
 import com.example.pricetracker.entity.PriceHistory;
 import com.example.pricetracker.entity.Product;
 import com.example.pricetracker.repository.MemberRepository;
+import com.example.pricetracker.repository.NotificationHistoryRepository;
 import com.example.pricetracker.repository.PriceHistoryRepository;
 import com.example.pricetracker.repository.ProductRepository;
 import com.example.pricetracker.service.NaverShoppingService;
@@ -30,6 +32,7 @@ public class PriceScheduler {
     private final NaverShoppingService naverShoppingService;
     private final TelegramService telegramService;
     private final MemberRepository memberRepository;
+    private final NotificationHistoryRepository notificationHistoryRepository;
 
     @Scheduled(fixedDelay = 60000)
     @Transactional
@@ -80,6 +83,11 @@ public class PriceScheduler {
             String message = String.format("🔔 [핫딜 알림]\n상품명: %s\n현재가: %,d원\n목표가: %,d원",
                     product.getProductName(), currentPrice, product.getTargetPrice());
             telegramService.sendMessage(product.getChatId(), message);
+            NotificationHistory history = new NotificationHistory();
+            history.setChatId(product.getChatId());
+            history.setProductName(product.getProductName());
+            history.setMessage(message);
+            notificationHistoryRepository.save(history);
             product.setAlarmEnabled(false);
         }
     }
