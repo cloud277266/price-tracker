@@ -24,7 +24,7 @@
         <div class="flex items-center gap-4">
             <button onclick="toggleTheme()" id="themeBtn" class="text-xl hover:opacity-80 transition">🌙</button>
             <button onclick="toggleSearch()" class="text-xl hover:opacity-80 transition">🔍</button>
-            <button class="text-xl hover:opacity-80 transition">🔔</button>
+            <button onclick="toggleNotiPanel()" class="text-xl hover:opacity-80 transition">🔔</button>
         </div>
     </div>
     <div id="searchDropdown" class="hidden absolute top-full left-0 w-full bg-blue-600 dark:bg-[#1e293b] px-4 pb-4 pt-1 shadow-md transition-all">
@@ -66,7 +66,7 @@
 </main>
 
 <nav class="bg-white dark:bg-[#1e293b] border-t border-gray-200 dark:border-gray-800 flex justify-around items-center h-16 shrink-0 absolute bottom-0 w-full max-w-md z-20 pb-safe transition-colors">
-    <button class="flex flex-col items-center justify-center w-full h-full text-blue-600 dark:text-blue-400">
+    <button onclick="location.href='/'" class="flex flex-col items-center justify-center w-full h-full text-blue-600 dark:text-blue-400">
         <span class="text-xl mb-0.5">🏠</span><span class="text-[10px] font-bold">홈</span>
     </button>
     <button onclick="location.href='/tracking.html'" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition">

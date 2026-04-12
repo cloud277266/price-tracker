@@ -10,13 +10,6 @@
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         }
-
-        // 💡 가장 먼저 로그인 체크! 없으면 튕겨냅니다.
-        const userChatId = localStorage.getItem('chatId');
-        if (!userChatId || userChatId === 'undefined' || userChatId === 'null') {
-            alert('로그인이 만료되었거나 연동되지 않았습니다.\n로그인 페이지로 이동합니다.');
-            window.location.href = '/login.html';
-        }
     </script>
     <style> ::-webkit-scrollbar { display: none; } </style>
 </head>
@@ -25,188 +18,136 @@
     <h1 class="text-xl font-extrabold tracking-tight text-blue-600 dark:text-blue-400">👤 내정보 (설정)</h1>
 </header>
 
-<main class="flex-1 overflow-y-auto pb-24 p-5 space-y-6">
+<main class="flex-1 overflow-y-auto pb-24 p-5">
 
-    <section class="bg-white dark:bg-[#1e293b] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
-        <h3 class="font-bold text-sm mb-4 text-gray-500 dark:text-gray-400">텔레그램 연동 정보</h3>
-        <div class="flex items-center gap-4 mb-4">
-            <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-2xl shadow-inner">🤖</div>
-            <div>
-                <p class="font-black text-lg text-gray-900 dark:text-white">연동 완료</p>
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400" id="chatIdDisplay">ID: 불러오는 중...</p>
-            </div>
+    <div id="unauthView" class="hidden flex-col items-center justify-center py-24 text-center">
+        <div class="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-6 shadow-inner">
+            <span class="text-4xl">🔐</span>
         </div>
-        <button onclick="logout()" class="w-full py-3 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold rounded-xl text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-            연동 해제 (로그아웃)
-        </button>
-    </section>
-
-    <section class="bg-white dark:bg-[#1e293b] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
-        <div class="flex justify-between items-center mb-2">
-            <h3 class="font-bold text-sm text-gray-800 dark:text-white">🌙 에티켓 모드 (방해금지)</h3>
-
-            <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="dndToggle" class="sr-only peer">
-                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-            </label>
-        </div>
-        <p class="text-[10px] text-gray-500 dark:text-gray-400 mb-5 leading-relaxed">
-            설정한 시간에는 목표가에 도달해도 알람이 울리지 않고 다음 날로 보류됩니다.
+        <h2 class="text-xl font-black mb-2 text-gray-800 dark:text-white">내 계정 설정</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-8 leading-relaxed">
+            텔레그램을 연동하면 방해금지 시간 설정 등<br>나만의 맞춤 알림 환경을 구성할 수 있어요.
         </p>
-
-        <div id="dndTimeSettings" class="flex gap-3 items-center opacity-40 pointer-events-none transition-all duration-300">
-            <div class="flex-1">
-                <label class="block text-[10px] font-bold text-gray-400 mb-1">시작 시간</label>
-                <select id="startHour" class="w-full bg-gray-50 dark:bg-[#0f172a] border border-gray-200 dark:border-gray-600 rounded-xl p-3 text-sm font-bold dark:text-white outline-none focus:border-blue-500 transition-colors"></select>
-            </div>
-            <span class="text-gray-400 text-sm mt-4 font-bold">~</span>
-            <div class="flex-1">
-                <label class="block text-[10px] font-bold text-gray-400 mb-1">종료 시간</label>
-                <select id="endHour" class="w-full bg-gray-50 dark:bg-[#0f172a] border border-gray-200 dark:border-gray-600 rounded-xl p-3 text-sm font-bold dark:text-white outline-none focus:border-blue-500 transition-colors"></select>
-            </div>
-        </div>
-
-        <button onclick="saveSettings()" class="w-full mt-6 py-3.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold rounded-xl text-sm transition shadow-md shadow-blue-500/20">
-            설정 저장하기
+        <button onclick="location.href='/login.html'" class="w-full max-w-[250px] flex items-center justify-center gap-2 bg-[#2AABEE] hover:bg-[#2298D6] text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-blue-500/30">
+            1초 만에 텔레그램 연동하기
         </button>
-    </section>
+    </div>
 
+    <div id="authView" class="hidden space-y-6">
+        <section class="bg-white dark:bg-[#1e293b] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
+            <h3 class="font-bold text-sm mb-4 text-gray-500 dark:text-gray-400">텔레그램 연동 정보</h3>
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-2xl shadow-inner">🤖</div>
+                <div>
+                    <p class="font-black text-lg text-gray-900 dark:text-white">연동 완료</p>
+                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400" id="chatIdDisplay">ID: 불러오는 중...</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="w-full py-3 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold rounded-xl text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                연동 해제 (로그아웃)
+            </button>
+        </section>
+
+        <section class="bg-white dark:bg-[#1e293b] rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="font-bold text-sm text-gray-800 dark:text-white">🌙 에티켓 모드 (방해금지)</h3>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="dndToggle" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 mb-5 leading-relaxed">설정한 시간에는 목표가에 도달해도 알람이 울리지 않고 보류됩니다.</p>
+
+            <div id="dndTimeSettings" class="flex gap-3 items-center opacity-40 pointer-events-none transition-all duration-300">
+                <div class="flex-1"><label class="block text-[10px] font-bold text-gray-400 mb-1">시작 시간</label><select id="startHour" class="w-full bg-gray-50 dark:bg-[#0f172a] border border-gray-200 rounded-xl p-3 text-sm font-bold outline-none"></select></div>
+                <span class="text-gray-400 text-sm mt-4 font-bold">~</span>
+                <div class="flex-1"><label class="block text-[10px] font-bold text-gray-400 mb-1">종료 시간</label><select id="endHour" class="w-full bg-gray-50 dark:bg-[#0f172a] border border-gray-200 rounded-xl p-3 text-sm font-bold outline-none"></select></div>
+            </div>
+
+            <button onclick="saveSettings()" class="w-full mt-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition shadow-md">
+                설정 저장하기
+            </button>
+        </section>
+    </div>
 </main>
 
 <nav class="bg-white dark:bg-[#1e293b] border-t border-gray-200 dark:border-gray-800 flex justify-around items-center h-16 shrink-0 fixed bottom-0 w-full max-w-md z-20 pb-safe transition-colors">
-    <button onclick="location.href='/'" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition">
-        <span class="text-xl mb-0.5">🏠</span><span class="text-[10px] font-bold">홈</span>
-    </button>
-    <button onclick="location.href='/tracking.html'" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition">
-        <span class="text-xl mb-0.5">❤️</span><span class="text-[10px] font-bold">추적목록</span>
-    </button>
-    <button class="flex flex-col items-center justify-center w-full h-full text-blue-600 dark:text-blue-400">
-        <span class="text-xl mb-0.5">👤</span><span class="text-[10px] font-bold">내정보</span>
-    </button>
+    <button onclick="location.href='/'" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-600 transition"><span class="text-xl mb-0.5">🏠</span><span class="text-[10px] font-bold">홈</span></button>
+    <button onclick="location.href='/tracking.html'" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-600 transition"><span class="text-xl mb-0.5">❤️</span><span class="text-[10px] font-bold">추적목록</span></button>
+    <button class="flex flex-col items-center justify-center w-full h-full text-blue-600 dark:text-blue-400"><span class="text-xl mb-0.5">👤</span><span class="text-[10px] font-bold">내정보</span></button>
 </nav>
 
 <script>
-    // 1. 화면 초기화 및 마스킹 처리
     document.addEventListener('DOMContentLoaded', () => {
-        const chatId = localStorage.getItem('chatId');
+        const userChatId = localStorage.getItem('chatId');
 
-        if (chatId && chatId.length > 4) {
-            // 예: 12345678 -> 1234****
-            const masked = chatId.substring(0, 4) + '*'.repeat(chatId.length - 4);
+        // 💡 깐깐한 로그인 검증 및 기획 의도(화면 분기) 반영
+        if (!userChatId || userChatId === 'undefined' || userChatId === 'null' || userChatId === '') {
+            document.getElementById('unauthView').classList.remove('hidden');
+            document.getElementById('unauthView').classList.add('flex');
+        } else {
+            document.getElementById('authView').classList.remove('hidden');
+
+            // 마스킹 처리
+            const masked = userChatId.substring(0, 4) + '*'.repeat(userChatId.length - 4);
             document.getElementById('chatIdDisplay').innerText = `고유 ID: ${masked}`;
-        }
 
-        // Select 박스 시간 채우기 (00:00 ~ 23:00)
-        let options = '';
-        for(let i = 0; i <= 23; i++) {
-            let hourStr = i.toString().padStart(2, '0') + ':00';
-            options += `<option value="${i}">${hourStr}</option>`;
-        }
+            // Select 시간 세팅
+            let options = '';
+            for(let i=0; i<=23; i++) options += `<option value="${i}">${i.toString().padStart(2, '0') + ':00'}</option>`;
+            document.getElementById('startHour').innerHTML = options;
+            document.getElementById('endHour').innerHTML = options;
 
-        const startSelect = document.getElementById('startHour');
-        const endSelect = document.getElementById('endHour');
-
-        if(startSelect && endSelect) {
-            startSelect.innerHTML = options;
-            endSelect.innerHTML = options;
-        }
-
-        // 토글 스위치 이벤트 리스너 연결
-        const dndToggle = document.getElementById('dndToggle');
-        const dndTimeSettings = document.getElementById('dndTimeSettings');
-
-        if(dndToggle && dndTimeSettings) {
+            // 토글 리스너
+            const dndToggle = document.getElementById('dndToggle');
+            const dndTimeSettings = document.getElementById('dndTimeSettings');
             dndToggle.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    dndTimeSettings.classList.remove('opacity-40', 'pointer-events-none');
-                } else {
-                    dndTimeSettings.classList.add('opacity-40', 'pointer-events-none');
-                }
+                if (e.target.checked) dndTimeSettings.classList.remove('opacity-40', 'pointer-events-none');
+                else dndTimeSettings.classList.add('opacity-40', 'pointer-events-none');
             });
+
+            loadSettings(userChatId);
         }
-
-        // 서버에서 기존 설정 불러오기 실행
-        loadSettings();
-
-        // 모든 준비가 끝나면 화면(body)을 보여줌
         document.getElementById('pageBody').classList.remove('hidden');
     });
 
-    // 2. 백엔드에서 유저 설정 정보 가져오기
-    async function loadSettings() {
-        const chatId = localStorage.getItem('chatId');
-        if(!chatId) return;
-
+    async function loadSettings(chatId) {
         try {
             const res = await fetch(`/api/members/${chatId}`);
             if (res.ok) {
                 const data = await res.json();
-
-                // DB 설정값을 화면에 반영
                 if (data.dndEnabled) {
                     document.getElementById('dndToggle').checked = true;
                     document.getElementById('dndTimeSettings').classList.remove('opacity-40', 'pointer-events-none');
                 }
-
                 document.getElementById('startHour').value = data.dndStartHour;
                 document.getElementById('endHour').value = data.dndEndHour;
             }
-        } catch (e) {
-            console.error('설정 정보를 불러오는데 실패했습니다.', e);
-        }
+        } catch (e) { console.error('설정 로드 실패'); }
     }
 
-    // 3. 설정 저장 버튼 클릭 시
     async function saveSettings() {
         const chatId = localStorage.getItem('chatId');
-        if(!chatId) return;
-
         const payload = {
             dndEnabled: document.getElementById('dndToggle').checked,
             dndStartHour: parseInt(document.getElementById('startHour').value),
             dndEndHour: parseInt(document.getElementById('endHour').value)
         };
+        if (payload.dndEnabled && payload.dndStartHour === payload.dndEndHour) { alert('시작과 종료 시간을 다르게 설정해주세요.'); return; }
 
-        // 검증 로직 추가 (시작과 종료가 같으면 의미가 없음)
-        if (payload.dndEnabled && payload.dndStartHour === payload.dndEndHour) {
-            alert('시작 시간과 종료 시간을 다르게 설정해주세요.');
-            return;
-        }
-
+        const btn = event.target; btn.disabled = true; btn.innerText = '저장 중...';
         try {
-            // 저장 버튼 비활성화 (따닥 방지)
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = '저장 중...';
-
-            const res = await fetch(`/api/members/${chatId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (res.ok) {
-                alert('에티켓 모드 설정이 안전하게 저장되었습니다!');
-            } else {
-                alert('저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
-            }
-
-            // 버튼 복구
-            btn.disabled = false;
-            btn.innerText = originalText;
-        } catch (e) {
-            alert('서버와 통신 중 오류가 발생했습니다.');
-            event.target.disabled = false;
-            event.target.innerText = '설정 저장하기';
-        }
+            const res = await fetch(`/api/members/${chatId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (res.ok) alert('설정이 안전하게 저장되었습니다!');
+            else alert('저장 실패');
+        } catch (e) { alert('오류 발생'); }
+        btn.disabled = false; btn.innerText = '설정 저장하기';
     }
 
-    // 4. 로그아웃 (기기 연동 해제)
     function logout() {
-        if (confirm('정말 연동을 해제하시겠습니까?\n이 기기에서는 더 이상 내 추적 목록을 볼 수 없게 됩니다.')) {
+        if (confirm('정말 연동을 해제하시겠습니까?\n이 기기에서는 더 이상 알림을 받을 수 없습니다.')) {
             localStorage.removeItem('chatId');
-            window.location.href = '/login.html';
+            window.location.reload(); // 💡 바로 예쁜 자물쇠 화면으로 전환!
         }
     }
 </script>
